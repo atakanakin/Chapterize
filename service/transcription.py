@@ -40,6 +40,7 @@ def transcribe_audio(
         beam_size=5,
         word_timestamps=(mode != TranscriptionMode.SENTENCE),
     )
+    segments = list(segments)
 
     # ---------- SENTENCE ----------
     if mode in (TranscriptionMode.SENTENCE, TranscriptionMode.BOTH):
