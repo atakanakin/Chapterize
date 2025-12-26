@@ -1,21 +1,23 @@
 # Chapterize
 
-An automated pipeline that converts YouTube videos into **short-form vertical (9:16) videos**.
+An automated pipeline that converts YouTube videos into **short-form vertical (9:16) videos** with **smart framing** and **multi-speaker subtitles**.
 
 The pipeline performs the following steps:
 
-- Downloads audio and video from YouTube
-- Generates **sentence-level and word-level** transcripts from audio
-- Uses Gemini to split the transcript into **meaningful chapters**
-- Filters chapters by engagement score
-- Merges audio and video
-- For each selected chapter:
-
-  - Cuts a subclip
-  - Crops the video to vertical (9:16)
-  - Burns ASS subtitles into the video
-
-- Outputs final short videos ready for publishing
+- **Download:** Fetches high-quality audio and video from YouTube.
+- **Advanced Transcription:**
+  - Uses `faster-whisper` for natural, high-accuracy timing.
+  - Performs **Speaker Diarization** using `whisperx` to identify who is speaking.
+- **Content Analysis:** Uses Gemini to split the transcript into **meaningful chapters** and filters them by engagement score.
+- **Smart Video Processing:**
+  - **Streamer Detection:** Automatically detects facecams/bounding boxes.
+  - **Dynamic Layout:**
+    - If a streamer is detected: Applies a **Split-Screen** layout (Streamer Top / Content Bottom).
+    - If no streamer is detected: Applies a standard **Center Crop**.
+- **Dynamic Subtitles:**
+  - Burns ASS subtitles into the video.
+  - Applies **Contextual Coloring** to speakers based on talk-time rank (e.g., Main Speaker = White, Secondary = Gold).
+- **Production:** Outputs final short videos ready for publishing.
 
 ---
 
@@ -24,7 +26,8 @@ The pipeline performs the following steps:
 - Python **3.12**
 - `ffmpeg` and `ffprobe`
 - `uv` ([https://docs.astral.sh/uv/](https://docs.astral.sh/uv/))
-- Google Gemini API key
+- **Google Gemini API Key** (for summarization)
+- **Hugging Face Token** (Required for Speaker Diarization models)
 
 Required font:
 
@@ -34,10 +37,18 @@ Required font:
 
 ## Setup
 
-```bash
-uv python pin 3.12
-uv sync
-```
+1. **Install Dependencies:**
+
+   ```bash
+   uv python pin 3.12
+   uv sync
+   ```
+
+2. **Hugging Face Permissions (Important):**
+   You must accept the user conditions for the following models on Hugging Face to use Diarization:
+
+- [pyannote/segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0)
+- [pyannote/speaker-diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1)
 
 ---
 
@@ -53,8 +64,11 @@ Fill in `.env`:
 
 ```env
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-GEMINI_MODEL=GEMINI_3_FLASH
+GEMINI_MODEL=gemini-2.0-flash-exp
 ENGAGEMENT_THRESHOLD=0.6
+
+# Required for WhisperX / Pyannote Diarization
+HF_TOKEN=hf_YourHuggingFaceTokenHere
 ```
 
 ---
@@ -76,6 +90,19 @@ Default output directories:
 
 ---
 
+## Subtitle Styling
+
+The pipeline uses a **Contextual Ranking System** to assign colors. It calculates who speaks the most in a specific clip and assigns colors from a priority palette:
+
+1. **Rank 1 (Main Speaker):** White (`&H20FFFFFF`)
+2. **Rank 2 (Secondary):** Gold / Amber (`&H2032C9FF`)
+3. **Rank 3 (Tertiary):** Pastel Red (`&H206060FF`)
+4. **Rank 4 (Quaternary):** Sky Blue (`&H20FFC080`)
+
+_Font:_ Montserrat Black (900).
+
+---
+
 ## Output
 
 For each generated short:
@@ -86,7 +113,7 @@ data/short/
 ├── {video_id}_{index}.txt   # chapter title
 ```
 
-Subtitles:
+Subtitles (Intermediate):
 
 ```
 data/subtitle/
@@ -97,7 +124,6 @@ data/subtitle/
 
 ## Notes
 
-- Subtitle font: **Montserrat Black (900)**
-  Do not enable the `bold` flag.
-- Video encoding is minimized; stream copy is used whenever possible.
-- The entire pipeline orchestration lives in `run.py`.
+- **Hybrid Transcriber:** The project uses a custom hybrid approach. `faster-whisper` is used for ASR (Text & Timing) to ensure natural flow, while `whisperx` is injected solely for Speaker Identification.
+- **PyTorch 2.6+:** The codebase includes patches to handle security restrictions in newer PyTorch versions regarding model loading.
+- **Orchestration:** The entire pipeline logic lives in `run.py`.
