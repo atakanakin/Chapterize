@@ -23,6 +23,8 @@ class Audio:
     def transcribe(
         self,
         mode: TranscriptionMode = TranscriptionMode.BOTH,
+        min_speakers: Optional[int] = None,
+        max_speakers: Optional[int] = None,
     ):
         """
         Calls the transcription service.
@@ -35,7 +37,12 @@ class Audio:
         """
         # Call external service
         # Note: transcribe_audio returns a list of Paths [path_sentence, path_word] depending on mode
-        transcripts = transcribe_audio(audio_path=self.path, mode=mode)
+        transcripts = transcribe_audio(
+            audio_path=self.path,
+            mode=mode,
+            min_speakers=min_speakers,
+            max_speakers=max_speakers,
+        )
         for transcript_path in transcripts:
             if ".sentence." in transcript_path.name:
                 self._sentence_json_path = transcript_path
@@ -104,11 +111,17 @@ class Audio:
         transcription_mode: TranscriptionMode = TranscriptionMode.BOTH,
         filter_low_engagement: bool = True,
         write_titles: bool = True,
+        min_speakers: Optional[int] = None,
+        max_speakers: Optional[int] = None,
     ) -> List[Short]:
         """
         Runs the full pipeline: transcribe, chapterize, and generate subtitles.
         """
-        self.transcribe(mode=transcription_mode)
+        self.transcribe(
+            mode=transcription_mode,
+            min_speakers=min_speakers,
+            max_speakers=max_speakers,
+        )
         self.chapterize(filter_low_engagement=filter_low_engagement)
         self.generate_subtitles(write_titles=write_titles)
         return self.shorts

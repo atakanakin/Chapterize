@@ -9,5 +9,9 @@ dependencies = [
     "google-genai>=1.56.0",
     "pillow>=12.0.0",
     "python-dotenv>=1.2.1",
+    "whisperx",
     "yt-dlp>=2025.12.8",
 ]
+
+[tool.uv.sources]
+whisperx = { git = "https://github.com/m-bain/whisperX.git" }

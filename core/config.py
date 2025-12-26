@@ -15,5 +15,6 @@ SHORT_DIR = "short"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "GEMINI_3_FLASH")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 ENGAGEMENT_THRESHOLD = float(os.getenv("ENGAGEMENT_THRESHOLD", "0.65"))
