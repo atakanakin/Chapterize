@@ -1,17 +1,16 @@
 from pathlib import Path
 import yt_dlp
-from core.paths import get_audio_dir
+from domain.paths import Paths
 
 
 def download_audio(
     youtube_url: str,
-    output_dir: Path | None = None,
     quiet: bool = False,
 ) -> Path:
     """
     Downloads audio from a YouTube video as MP3.
     """
-    audio_dir = get_audio_dir(output_dir)
+    audio_dir = Paths.get_audio_dir()
 
     ydl_opts = {
         "format": "bestaudio/best",

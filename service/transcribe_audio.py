@@ -2,9 +2,8 @@ from pathlib import Path
 import json
 from faster_whisper import WhisperModel
 
-from core.paths import get_transcript_dir
-from core.transcription import TranscriptionMode
-
+from model.transcript import TranscriptionMode
+from domain.paths import Paths
 
 _MODEL = WhisperModel(
     "medium",
@@ -14,24 +13,17 @@ _MODEL = WhisperModel(
 
 def transcribe_audio(
     audio_path: Path,
-    output_base_dir: Path | None = None,
-    mode: TranscriptionMode = TranscriptionMode.SENTENCE,
+    mode: TranscriptionMode = TranscriptionMode.BOTH,
 ) -> list[Path]:
-    """
-    Transcribes an audio file and writes timestamped transcript(s).
-
-    Modes:
-    - SENTENCE: sentence-level transcript
-    - WORD: word-level transcript
-    - BOTH: sentence + word (single Whisper pass)
-
+    """Transcribes the given audio file and writes transcripts to JSON files.
     Returns:
         list[Path]: written transcript file paths
     """
     if not audio_path.exists():
         raise FileNotFoundError(audio_path)
 
-    transcript_dir = get_transcript_dir(output_base_dir)
+    transcript_dir = Paths.get_transcript_dir()
+
     written_files: list[Path] = []
 
     segments, info = _MODEL.transcribe(
@@ -44,9 +36,7 @@ def transcribe_audio(
 
     # ---------- SENTENCE ----------
     if mode in (TranscriptionMode.SENTENCE, TranscriptionMode.BOTH):
-        sentence_path = (
-            transcript_dir / f"{audio_path.stem}.sentence.json"
-        )
+        sentence_path = transcript_dir / f"{audio_path.stem}.sentence.json"
 
         sentence_payload = {
             "language": info.language,

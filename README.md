@@ -68,11 +68,11 @@ uv run main.py
 Default output directories:
 
 - Audio → `data/audio`
-- Transcripts → `data/transcripts`
-- Chapters → `data/chapters`
-- Subtitles → `data/subtitles`
-- Videos → `data/video`
-- Final shorts → `data/shorts`
+- Transcript → `data/transcript`
+- Chapter → `data/chapter`
+- Subtitle → `data/subtitle`
+- Video → `data/video`
+- Final shorts → `data/short`
 
 ---
 
@@ -81,7 +81,7 @@ Default output directories:
 For each generated short:
 
 ```
-data/shorts/
+data/short/
 ├── {video_id}_{index}.mp4
 ├── {video_id}_{index}.txt   # chapter title
 ```
@@ -89,7 +89,7 @@ data/shorts/
 Subtitles:
 
 ```
-data/subtitles/
+data/subtitle/
 ├── {video_id}_{index}.ass
 ```
 

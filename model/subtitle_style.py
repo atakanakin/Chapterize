@@ -8,7 +8,6 @@ class ASSStyle:
     font_name: str = "Montserrat Black"
     font_size: int = 90
 
-
     primary_color: str = "&H20FFFFFF"
     outline_color: str = "&H00000000"
     back_color: str = "&H00000000"

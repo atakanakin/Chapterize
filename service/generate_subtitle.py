@@ -5,10 +5,9 @@ from model.subtitle_style import ASSStyle
 from utils.ass_format import seconds_to_ass_time, bool_to_ass
 
 
-def generate_ass(
+def generate_subtitle(
     word_transcript_path: Path,
     output_path: Path,
-    *,
     start: float,
     end: float,
     style: ASSStyle = ASSStyle(),
@@ -19,10 +18,7 @@ def generate_ass(
     with open(word_transcript_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    words = [
-        w for w in data["words"]
-        if w["start"] >= start and w["end"] <= end
-    ]
+    words = [w for w in data["words"] if w["start"] >= start and w["end"] <= end]
 
     lines = []
 

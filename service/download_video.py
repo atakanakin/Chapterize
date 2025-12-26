@@ -1,14 +1,12 @@
 from pathlib import Path
 import yt_dlp
-
-from core.video import VideoQuality
-from core.paths import get_video_dir
+from domain.paths import Paths
+from model.video_quality import VideoQuality
 
 
 def download_video(
     youtube_url: str,
     quality: VideoQuality = VideoQuality.P1080,
-    output_base_dir: Path | None = None,
     quiet: bool = False,
 ) -> Path:
     """
@@ -17,12 +15,9 @@ def download_video(
     - Default: best video up to 1080p
     - Accepts higher fps variants (1080p50, 1080p60, etc.)
     """
-    video_dir = get_video_dir(output_base_dir)
+    video_dir = Paths.get_video_dir()
 
-    # 🔥 yt-dlp format selector
-    format_selector = (
-        f"bestvideo[height<={quality.max_height}]/best"
-    )
+    format_selector = f"bestvideo[height<={quality.max_height}]/best"
 
     ydl_opts = {
         "format": format_selector,

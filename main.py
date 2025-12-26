@@ -1,8 +1,8 @@
-from service.run import run_youtube_chapterize_pipeline
+from service.run import run_pipeline
 
 
 def main():
-    run_youtube_chapterize_pipeline(
+    run_pipeline(
         youtube_url="https://www.youtube.com/watch?v=6jKGclan4LE"  # Example URL :D
     )
 

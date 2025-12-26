@@ -5,8 +5,8 @@ from google.genai import types
 
 from core.config import GEMINI_API_KEY, GEMINI_MODEL
 from core.gemini import resolve_model
-from model.chapter import Chapter, ChapterizeResult
-from service.chapter_writer import write_chapters
+from domain.paths import Paths
+from model.chapter import Chapter
 
 
 def load_system_prompt() -> str:
@@ -34,9 +34,24 @@ def _extract_json(text: str) -> dict:
     return json.loads(text)
 
 
+def write_chapters(
+    transcript_path: Path,
+    chapters_payload: dict,
+) -> Path:
+    """
+    Writes chapter JSON to data/chapters using transcript base name.
+    """
+    chapter_dir = Paths.get_chapter_dir()
+    chapter_file_name = f"{transcript_path.stem.split(".")[0]}.json"
+    output_path = chapter_dir / chapter_file_name
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(chapters_payload, f, ensure_ascii=False, indent=2)
+
+    return output_path
+
+
 def chapterize_transcript(
     transcript_path: Path,
-    output_base_dir: Path | None = None,
 ) -> Path:
     """
     Runs Gemini chapterization and writes chapters JSON to disk.
@@ -54,14 +69,13 @@ def chapterize_transcript(
     transcript = load_transcript(transcript_path)
 
     response = client.models.generate_content(
-        model=model.value,  # gemini-3-flash-preview
+        model=model.value,
         contents=[
             system_prompt,
             json.dumps(transcript, ensure_ascii=False),
         ],
         config=types.GenerateContentConfig(
             temperature=0.4,
-            # thinking_level="low",  # opsiyonel
         ),
     )
 
@@ -77,8 +91,6 @@ def chapterize_transcript(
         for c in data["chapters"]
     ]
 
-    result = ChapterizeResult(chapters=chapters)
-
     payload = {
         "chapters": [
             {
@@ -87,14 +99,13 @@ def chapterize_transcript(
                 "end": ch.end,
                 "engagement_score": ch.engagement_score,
             }
-            for ch in result.chapters
+            for ch in chapters
         ]
     }
 
     output_path = write_chapters(
         transcript_path=transcript_path,
         chapters_payload=payload,
-        output_base_dir=output_base_dir,
     )
 
     return output_path
