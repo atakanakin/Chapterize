@@ -20,11 +20,11 @@ class Paths:
 
     _root: Path = BASE_DATA_DIR
     AUDIO_DIR = AUDIO_DIR
-    TRANSCRIPTS_DIR = TRANSCRIPTS_DIR
-    CHAPTERS_DIR = CHAPTERS_DIR
+    TRANSCRIPTS_DIR = TRANSCRIPT_DIR
+    CHAPTERS_DIR = CHAPTER_DIR
     VIDEO_DIR = VIDEO_DIR
-    SUBTITLES_DIR = SUBTITLES_DIR
-    SHORTS_DIR = SHORTS_DIR
+    SUBTITLES_DIR = SUBTITLE_DIR
+    SHORTS_DIR = SHORT_DIR
 
     @classmethod
     def configure(cls, new_base_dir: Union[str, Path]) -> None:
