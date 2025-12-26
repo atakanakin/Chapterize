@@ -33,8 +33,8 @@ def run_pipeline(youtube_url: str) -> None:
             end_time=chapter.end,
             output_path=subclip_path,
         )
-        cropped_subclip = subclip.resize_with_crop(
-            Paths.get_video_dir() / f"{short.subtitle_path.stem}.mp4"
+        cropped_subclip = subclip.smart_vertical_crop(
+            output_path=Paths.get_video_dir() / f"{short.subtitle_path.stem}.mp4"
         )
         cropped_subclip.burn_in_subtitle(
             subtitle_path=short.subtitle_path,

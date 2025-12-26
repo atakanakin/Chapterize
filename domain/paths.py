@@ -7,6 +7,7 @@ from core.config import (
     TRANSCRIPT_DIR,
     CHAPTER_DIR,
     VIDEO_DIR,
+    FRAME_DIR,
     SUBTITLE_DIR,
     SHORT_DIR,
 )
@@ -23,6 +24,7 @@ class Paths:
     TRANSCRIPTS_DIR = TRANSCRIPT_DIR
     CHAPTERS_DIR = CHAPTER_DIR
     VIDEO_DIR = VIDEO_DIR
+    FRAME_DIR = FRAME_DIR
     SUBTITLES_DIR = SUBTITLE_DIR
     SHORTS_DIR = SHORT_DIR
 
@@ -55,6 +57,10 @@ class Paths:
     @classmethod
     def get_video_dir(cls) -> Path:
         return cls._ensure(cls._root / cls.VIDEO_DIR)
+
+    @classmethod
+    def get_frame_dir(cls) -> Path:
+        return cls._ensure(cls._root / cls.FRAME_DIR)
 
     @classmethod
     def get_subtitle_dir(cls) -> Path:

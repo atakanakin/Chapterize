@@ -7,13 +7,7 @@ from core.config import GEMINI_API_KEY, GEMINI_MODEL
 from core.gemini import resolve_model
 from domain.paths import Paths
 from model.chapter import Chapter
-
-
-def load_system_prompt() -> str:
-    path = Path("prompt/chapterize_system.md")
-    if not path.exists():
-        raise FileNotFoundError(path)
-    return path.read_text(encoding="utf-8")
+from utils.llm_helper import extract_json, load_system_prompt
 
 
 def load_transcript(path: Path) -> dict:
@@ -21,17 +15,6 @@ def load_transcript(path: Path) -> dict:
         raise FileNotFoundError(path)
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
-
-
-def _extract_json(text: str) -> dict:
-    """
-    Safely extract JSON from Gemini response.
-    Handles ```json``` fenced outputs.
-    """
-    text = text.strip()
-    if text.startswith("```"):
-        text = text.split("```")[1].strip()
-    return json.loads(text)
 
 
 def write_chapters(
@@ -65,7 +48,7 @@ def chapterize_transcript(
     client = genai.Client(api_key=GEMINI_API_KEY)
     model = resolve_model(GEMINI_MODEL)
 
-    system_prompt = load_system_prompt()
+    system_prompt = load_system_prompt(Path("prompt/chapterize_system.md"))
     transcript = load_transcript(transcript_path)
 
     response = client.models.generate_content(
@@ -79,7 +62,7 @@ def chapterize_transcript(
         ),
     )
 
-    data = _extract_json(response.text)
+    data = extract_json(response.text)
 
     chapters = [
         Chapter(

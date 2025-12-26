@@ -3,6 +3,9 @@ import json
 from pathlib import Path
 from enum import Enum, auto
 from typing import Union, Optional
+from model.streamer import StreamerBBox
+from service.detect_streamer import detect_streamer
+from utils.extract_frames import extract_frames
 
 
 class VideoType(Enum):
@@ -19,11 +22,13 @@ class Video:
         path: Union[str, Path],
         video_type: VideoType = VideoType.ORIGINAL,
         aspect_ratio: Optional[tuple[int, int]] = None,  # (width, height)
+        streamer_bbox: Optional[StreamerBBox] = None,
     ):
         self.path = Path(path)
         self.video_type = video_type
         self._aspect_ratio = aspect_ratio
         self._name: Optional[str] = None
+        self.streamer_bbox = streamer_bbox
 
     @property
     def name(self) -> str:
@@ -73,6 +78,9 @@ class Video:
         if not audio_path.exists():
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
+        if self.streamer_bbox is None:
+            self.streamer_bbox = self.get_streamer_bbox()
+
         cmd = [
             "ffmpeg",
             "-y",
@@ -97,6 +105,7 @@ class Video:
             path=output_path,
             video_type=VideoType.ORIGINAL,
             aspect_ratio=self._aspect_ratio,
+            streamer_bbox=self.streamer_bbox,
         )
 
     def extract_subclip(
@@ -125,6 +134,142 @@ class Video:
             path=output_path,
             video_type=VideoType.SUBCLIP,
             aspect_ratio=self._aspect_ratio,
+            streamer_bbox=self.streamer_bbox,
+        )
+
+    def get_streamer_bbox(self) -> Optional[StreamerBBox]:
+        """Detects streamer bounding box using Gemini model."""
+
+        frames = extract_frames(video_path=self.path, frame_count=2)
+        streamer_detection = detect_streamer(frames)
+        print(f"Streamer Detection: {streamer_detection}")
+        return streamer_detection.bounding_box
+
+    def smart_vertical_crop(
+        self,
+        output_path: Union[str, Path],
+        target_width: int = 1080,
+        target_height: int = 1920,
+        streamer_aspect_ratio: float = 6 / 16,
+    ) -> "Video":
+        """
+        Smartly crops the video to vertical format with split-screen support.
+
+        Logic:
+        - Calculates split heights based on 6/16 (Top) and 10/16 (Bottom) ratios.
+        - Streamer Crop: Uses 'Crop to Fill' strategy inside the BBox to avoid stretching.
+        - Content Crop: Standard center crop to fill the bottom area.
+        """
+        output_path = Path(output_path)
+        source_w, source_h = self.resolution
+
+        top_height = int(target_height * (streamer_aspect_ratio))
+        bottom_height = target_height - top_height
+
+        # --- CASE 1: No Streamer (Standard Center Crop) ---
+        if self.streamer_bbox is None:
+            print("No streamer detected, performing standard center crop.")
+            return self.resize_with_crop(
+                output_path=output_path,
+                target_width=target_width,
+                target_height=target_height,
+            )
+
+        print("Streamer detected, performing smart vertical crop.")
+
+        # --- PART A: Top (Streamer) - "Crop to Fill" Logic ---
+        # We treat the BBox as the source video and target_width x top_height as the destination.
+
+        # 1. Get BBox dimensions in pixels
+        bbox_x = self.streamer_bbox.x * source_w
+        bbox_y = self.streamer_bbox.y * source_h
+        bbox_w = self.streamer_bbox.width * source_w
+        bbox_h = self.streamer_bbox.height * source_h
+
+        # 2. Calculate Aspect Ratios
+        target_top_ratio = target_width / top_height
+        current_bbox_ratio = bbox_w / bbox_h
+
+        # 3. Determine Crop Dimensions (inside the BBox)
+        if current_bbox_ratio > target_top_ratio:
+            # BBox is wider than target slot -> Crop sides (preserve height)
+            crop_h = bbox_h
+            crop_w = bbox_h * target_top_ratio
+        else:
+            # BBox is taller than target slot -> Crop top/bottom (preserve width)
+            crop_w = bbox_w
+            crop_h = bbox_w / target_top_ratio
+
+        # 4. Center the crop within the BBox
+        # Center X of BBox = bbox_x + (bbox_w / 2)
+        # Top-Left X of Crop = Center X - (crop_w / 2)
+        crop_x = (bbox_x + (bbox_w / 2)) - (crop_w / 2)
+        crop_y = (bbox_y + (bbox_h / 2)) - (crop_h / 2)
+
+        # 5. Create Filter String (Crop -> Scale)
+        # We cast to int() for FFmpeg
+        top_filter = (
+            f"crop={int(crop_w)}:{int(crop_h)}:{int(crop_x)}:{int(crop_y)},"
+            f"scale={target_width}:{top_height}"
+        )
+
+        # --- PART B: Bottom (Content) - "Crop to Fill" Logic ---
+        # Target is target_width x bottom_height
+
+        target_bottom_ratio = target_width / bottom_height
+        current_video_ratio = source_w / source_h
+
+        if current_video_ratio > target_bottom_ratio:
+            # Video is wider -> Crop sides
+            g_crop_h = source_h
+            g_crop_w = source_h * target_bottom_ratio
+            g_crop_x = (source_w - g_crop_w) / 2
+            g_crop_y = 0
+        else:
+            # Video is taller -> Crop top/bottom
+            g_crop_w = source_w
+            g_crop_h = source_w / target_bottom_ratio
+            g_crop_x = 0
+            g_crop_y = (source_h - g_crop_h) / 2
+
+        content_filter = (
+            f"crop={int(g_crop_w)}:{int(g_crop_h)}:{int(g_crop_x)}:{int(g_crop_y)},"
+            f"scale={target_width}:{bottom_height}"
+        )
+
+        # --- PART C: Combine ---
+        filter_complex = (
+            f"[0:v]{top_filter}[top];"
+            f"[0:v]{content_filter}[bottom];"
+            f"[top][bottom]vstack=inputs=2"
+        )
+
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(self.path),
+            "-filter_complex",
+            filter_complex,
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "copy",
+            str(output_path),
+        ]
+
+        subprocess.run(cmd, check=True)
+
+        return Video(
+            path=output_path,
+            video_type=VideoType.CROPPED,
+            aspect_ratio=(target_width, target_height),
         )
 
     def resize_with_crop(
