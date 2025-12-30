@@ -19,6 +19,12 @@ The pipeline performs the following steps:
   - Applies **Contextual Coloring** to speakers based on talk-time rank (e.g., Main Speaker = White, Secondary = Gold).
 - **Production:** Outputs final short videos ready for publishing.
 
+## Additional Features
+
+- **Lock Mechanism**: Ensures only one instance of the pipeline runs at a time by creating a lock file in the data directory. If a lock file exists, the pipeline raises an error to prevent conflicts.
+- **Automatic Cleanup**: Before starting, the pipeline checks for the lock file. If absent, it cleans all files and subdirectories in the data directory to ensure a fresh start.
+- **Final Output Directory**: After processing, all generated short videos are moved from the internal shorts directory to a `final` directory located in the parent folder of the working directory, keeping outputs organized and accessible.
+
 ---
 
 ## Requirements
@@ -86,7 +92,7 @@ Default output directories:
 - Chapter → `data/chapter`
 - Subtitle → `data/subtitle`
 - Video → `data/video`
-- Final shorts → `data/short`
+- Intermediate shorts → `data/short` (moved to final directory after processing)
 
 ---
 
@@ -108,17 +114,12 @@ _Font:_ Montserrat Black (900).
 For each generated short:
 
 ```
-data/short/
+../final/ (parent directory of working directory)
 ├── {video_id}_{index}.mp4
 ├── {video_id}_{index}.txt   # chapter title
 ```
 
-Subtitles (Intermediate):
-
-```
-data/subtitle/
-├── {video_id}_{index}.ass
-```
+Intermediate files are stored in `data/` subdirectories and cleaned up after processing.
 
 ---
 
