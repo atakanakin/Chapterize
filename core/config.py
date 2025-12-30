@@ -12,6 +12,7 @@ VIDEO_DIR = "video"
 FRAME_DIR = "frame"
 SUBTITLE_DIR = "subtitle"
 SHORT_DIR = "short"
+FINAL_DIR = "final"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "GEMINI_3_FLASH")

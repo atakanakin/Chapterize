@@ -10,6 +10,7 @@ from core.config import (
     FRAME_DIR,
     SUBTITLE_DIR,
     SHORT_DIR,
+    FINAL_DIR,
 )
 
 
@@ -27,6 +28,7 @@ class Paths:
     FRAME_DIR = FRAME_DIR
     SUBTITLES_DIR = SUBTITLE_DIR
     SHORTS_DIR = SHORT_DIR
+    FINAL_DIR = FINAL_DIR
 
     @classmethod
     def configure(cls, new_base_dir: Union[str, Path]) -> None:
@@ -69,3 +71,11 @@ class Paths:
     @classmethod
     def get_short_output_dir(cls) -> Path:
         return cls._ensure(cls._root / cls.SHORTS_DIR)
+
+    @classmethod
+    def get_final_dir(cls) -> Path:
+        return cls._ensure(Path.cwd().parent / cls.FINAL_DIR)
+
+    @classmethod
+    def get_lock_file(cls) -> Path:
+        return cls._root / ".lock"
