@@ -1,16 +1,9 @@
 import modal
 import time
 from pathlib import Path
-from typing import Optional, NamedTuple
+from typing import Optional
 from model.streamer import StreamerBBox
 from domain.paths import Paths
-
-
-class TransportBBox(NamedTuple):
-    x: float
-    y: float
-    width: float
-    height: float
 
 
 def render_video(
@@ -48,12 +41,12 @@ def render_video(
 
     transport_bbox = None
     if bbox is not None:
-        transport_bbox = TransportBBox(
-            x=float(bbox.x),
-            y=float(bbox.y),
-            width=float(bbox.width),
-            height=float(bbox.height),
-        )
+        transport_bbox = {
+            "x": float(bbox.x),
+            "y": float(bbox.y),
+            "width": float(bbox.width),
+            "height": float(bbox.height),
+        }
 
     try:
         result_bytes = renderer.render_pipeline.remote(
