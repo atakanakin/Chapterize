@@ -39,7 +39,6 @@ class Audio:
         # Note: transcribe_audio returns a list of Paths [path_sentence, path_word] depending on mode
         transcripts = transcribe_audio(
             audio_path=self.path,
-            mode=mode,
             min_speakers=min_speakers,
             max_speakers=max_speakers,
         )
