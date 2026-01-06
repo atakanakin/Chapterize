@@ -1,9 +1,16 @@
 import modal
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, NamedTuple
 from model.streamer import StreamerBBox
 from domain.paths import Paths
+
+
+class TransportBBox(NamedTuple):
+    x: float
+    y: float
+    width: float
+    height: float
 
 
 def render_video(
@@ -39,9 +46,21 @@ def render_video(
     print("-> Uploading and Rendering...")
     start_time = time.time()
 
+    transport_bbox = None
+    if bbox is not None:
+        transport_bbox = TransportBBox(
+            x=float(bbox.x),
+            y=float(bbox.y),
+            width=float(bbox.width),
+            height=float(bbox.height),
+        )
+
     try:
         result_bytes = renderer.render_pipeline.remote(
-            video_bytes=v_data, subtitle_bytes=s_data, font_files=font_files, bbox=bbox
+            video_bytes=v_data,
+            subtitle_bytes=s_data,
+            font_files=font_files,
+            bbox=transport_bbox,
         )
     except Exception as e:
         print(f"Remote Error: {e}")
