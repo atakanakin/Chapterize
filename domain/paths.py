@@ -45,6 +45,10 @@ class Paths:
         return path
 
     @classmethod
+    def get_font_dir(cls) -> Path:
+        return cls._ensure(cls._root / "assets/fonts")
+
+    @classmethod
     def get_audio_dir(cls) -> Path:
         return cls._ensure(cls._root / cls.AUDIO_DIR)
 
