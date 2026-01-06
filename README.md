@@ -1,13 +1,11 @@
 # Chapterize
 
-An automated pipeline that converts YouTube videos into **short-form vertical (9:16) videos** with **smart framing** and **multi-speaker subtitles**.
+An automated pipeline that converts YouTube videos into **short-form vertical (9:16) videos** with **smart framing** and **multi-speaker subtitles**. The pipeline integrates with **Modal** for cloud-based transcription and video rendering to ensure high performance and scalability.
 
 The pipeline performs the following steps:
 
 - **Download:** Fetches high-quality audio and video from YouTube.
-- **Advanced Transcription:**
-  - Uses `faster-whisper` for natural, high-accuracy timing.
-  - Performs **Speaker Diarization** using `whisperx` to identify who is speaking.
+- **Advanced Transcription:** Uses cloud-deployed Whisper models for natural, high-accuracy timing and Speaker Diarization.
 - **Content Analysis:** Uses Gemini to split the transcript into **meaningful chapters** and filters them by engagement score.
 - **Smart Video Processing:**
   - **Streamer Detection:** Automatically detects facecams/bounding boxes.
@@ -15,7 +13,7 @@ The pipeline performs the following steps:
     - If a streamer is detected: Applies a **Split-Screen** layout (Streamer Top / Content Bottom).
     - If no streamer is detected: Applies a standard **Center Crop**.
 - **Dynamic Subtitles:**
-  - Burns ASS subtitles into the video.
+  - Burns ASS subtitles into the video using cloud rendering.
   - Applies **Contextual Coloring** to speakers based on talk-time rank (e.g., Main Speaker = White, Secondary = Gold).
 - **Production:** Outputs final short videos ready for publishing.
 
@@ -32,8 +30,8 @@ The pipeline performs the following steps:
 - Python **3.12**
 - `ffmpeg` and `ffprobe`
 - `uv` ([https://docs.astral.sh/uv/](https://docs.astral.sh/uv/))
+- **Modal Account** (for cloud-based transcription and video rendering)
 - **Google Gemini API Key** (for summarization)
-- **Hugging Face Token** (Required for Speaker Diarization models)
 
 Required font:
 
@@ -50,11 +48,19 @@ Required font:
    uv sync
    ```
 
-2. **Hugging Face Permissions (Important):**
-   You must accept the user conditions for the following models on Hugging Face to use Diarization:
+2. **Install Modal CLI:**
 
-- [pyannote/segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0)
-- [pyannote/speaker-diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1)
+   ```bash
+   uv add modal
+   ```
+
+3. **Authenticate with Modal:**
+
+   ```bash
+    uv run modal setup
+   ```
+
+   Follow the prompts to authenticate your Modal account.
 
 ---
 
@@ -72,18 +78,19 @@ Fill in `.env`:
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 GEMINI_MODEL=gemini-2.0-flash-exp
 ENGAGEMENT_THRESHOLD=0.6
-
-# Required for WhisperX / Pyannote Diarization
-HF_TOKEN=hf_YourHuggingFaceTokenHere
 ```
 
 ---
 
 ## Run
 
+The pipeline runs locally but leverages Modal for GPU-accelerated transcription and video rendering.
+
 ```bash
 uv run main.py
 ```
+
+The pipeline will automatically connect to the deployed Modal apps (`whisper-diarizer-prod` for transcription and `video-renderer-prod` for rendering) to perform the heavy computations in the cloud.
 
 Default output directories:
 
@@ -125,6 +132,6 @@ Intermediate files are stored in `data/` subdirectories and cleaned up after pro
 
 ## Notes
 
-- **Hybrid Transcriber:** The project uses a custom hybrid approach. `faster-whisper` is used for ASR (Text & Timing) to ensure natural flow, while `whisperx` is injected solely for Speaker Identification.
-- **PyTorch 2.6+:** The codebase includes patches to handle security restrictions in newer PyTorch versions regarding model loading.
+- **Cloud-Based Processing:** Transcription and video rendering are performed on Modal's cloud infrastructure for better performance and scalability.
+- **Hybrid Transcriber:** The project uses a custom hybrid approach. Transcription is handled by Modal-deployed Whisper models for ASR and Speaker Diarization.
 - **Orchestration:** The entire pipeline logic lives in `run.py`.
