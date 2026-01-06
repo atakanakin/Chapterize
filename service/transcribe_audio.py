@@ -33,7 +33,7 @@ def transcribe_audio(
     # Connect to the deployed App
     print(f"-> Connecting to Modal App: whisper-diarizer-prod...")
     # Matches the app_name and class_name in your main.py
-    TranscriberRemote = modal.Cls.lookup("whisper-diarizer-prod", "AudioTranscriber")
+    TranscriberRemote = modal.Cls.from_name("whisper-diarizer-prod", "AudioTranscriber")
     transcriber = TranscriberRemote()
     if not audio_path.exists():
         raise FileNotFoundError(f"Audio file not found: {audio_path}")

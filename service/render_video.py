@@ -17,7 +17,7 @@ def render_video(
     Connects to deployed 'video-renderer-prod', executes pipeline, and saves result locally.
     """
     print(f"-> Connecting to Modal: video-renderer-prod...")
-    RendererRemote = modal.Cls.lookup("video-renderer-prod", "VideoRenderer")
+    RendererRemote = modal.Cls.from_name("video-renderer-prod", "VideoRenderer")
     renderer = RendererRemote()
 
     if not video_path.exists():
